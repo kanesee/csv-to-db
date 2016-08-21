@@ -96,12 +96,12 @@ def insert_rows(csvfilename, cnx):
   cursor.execute(insertsql)
   cnx.commit()
 
-def convert(cnx, csvfilename):
+def convert(cnx, csvfilename, samplesize):
   print 'converting '+csvfilename+'...'
   col_types = {}
   fieldnames = []
 
-  guess_col_types(csvfilename, fieldnames, col_types, 10)
+  guess_col_types(csvfilename, fieldnames, col_types, samplesize)
   # print col_types
 
   create_table(csvfilename, fieldnames, col_types, cnx)
@@ -115,9 +115,10 @@ def main(argv):
   user = 'root'
   password = None
   host = 'localhost'
+  samplesize = 10
 
   usage = 'Usage'
-  usage += os.linesep + '  csv-to-mysql.py -i <csvfile|dir> -s <db_server> -d <database> -u <user> -p <pass>'
+  usage += os.linesep + '  csv-to-mysql.py -i <csvfile|dir> -s <db_server> -d <database> -u <user> -p <pass> -k <samplesize>'
   usage += os.linesep + 'Example'
   usage += os.linesep + '  csv-to-mysql.py -i test -d myDb'
   usage += os.linesep + 'Options'
@@ -125,9 +126,10 @@ def main(argv):
   usage += os.linesep + '  <db_server> is optional. default is "localhost"'
   usage += os.linesep + '  <user> is optional. default is "root"'
   usage += os.linesep + '  <pass> can be left empty'
+  usage += os.linesep + '  <samplesize> is number of rows to sample to determine field type. default is 10'
   try:
-    shortargs = 'hi:s:d:u:p:'
-    longargs = ['help','csvfile=','db_server=', 'database=','user=','pass=']
+    shortargs = 'hi:s:d:u:p:k:'
+    longargs = ['help','csvfile=','db_server=', 'database=','user=','pass=','samplesize=']
     opts, args = getopt.getopt(argv,shortargs,longargs)
   except getopt.GetoptError:
     print usage
@@ -144,6 +146,8 @@ def main(argv):
       user = arg
     elif opt in ('-p', '--pass'):
       password = arg
+    elif opt in ('-k', '--samplesize'):
+      samplesize = arg
 
   if csvfile == None or database == None:
     print usage
@@ -156,12 +160,12 @@ def main(argv):
   csvfile = os.path.abspath(csvfile)
 
   if os.path.isfile(csvfile):
-    convert(cnx, csvfile)
+    convert(cnx, csvfile, samplesize)
   else:
     for file in os.listdir(csvfile):
-      absfile = csvfile+os.linesep+file
+      absfile = csvfile+os.sep+file
       if absfile and absfile.lower().endswith('.csv'):
-        convert(cnx, absfile)
+        convert(cnx, absfile, samplesize)
 
   cnx.close()
 
